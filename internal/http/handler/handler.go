@@ -25,6 +25,9 @@ func (h *Handler) PublishMessage(c *fiber.Ctx) error {
 		return c.Status(fiber.ErrBadRequest.Code).SendString("wrong publish delay format. should be: 100ms")
 	}
 	pubDelayDuration, err := time.ParseDuration(body.PublishDelay)
+	if pubDelayDuration.Milliseconds() < 5000 {
+		return c.Status(fiber.ErrBadRequest.Code).SendString("cant have delay less than 5 seconds")
+	}
 	if err != nil {
 		log.Error("error while parsing request publish delay: ", err)
 		return fiber.ErrBadRequest
