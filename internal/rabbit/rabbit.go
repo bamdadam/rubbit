@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/bamdadam/rubbit/internal/db/rdb"
 	"github.com/bamdadam/rubbit/internal/rabbit/exchange"
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -89,7 +90,7 @@ func (r *RabbitServer) PublishMessage(topic string, message string) error {
 	return nil
 }
 
-func InitRabbitClient() error {
+func InitRabbitClient(rdb *rdb.RedisDb) error {
 	conn, err := amqp091.Dial("amqp://guest:guest@localhost:5672/")
 	if err != nil {
 		log.Println("error while making connection to amqp broker")
