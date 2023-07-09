@@ -44,7 +44,7 @@ func InitRabbitServer() (*RabbitServer, error) {
 	return rb, nil
 }
 
-func (r *RabbitServer) PublishMessage(topic string, message string) error {
+func (r *RabbitServer) PublishMessage(topic string, message string, pubDelay int64) error {
 	err := r.ch.PublishWithContext(
 		r.ctx,
 		"Announcer",
@@ -54,6 +54,9 @@ func (r *RabbitServer) PublishMessage(topic string, message string) error {
 		amqp091.Publishing{
 			ContentType: "text/plain",
 			Body:        []byte(message),
+			Headers: map[string]interface{}{
+				"x-delay": pubDelay,
+			},
 		},
 	)
 	if err != nil {
@@ -87,7 +90,11 @@ func InitRabbitClient() error {
 		log.Println("error while making amqp queue: ", err)
 		return err
 	}
-	for _, arg := range os.Args[2:] {
+	args := os.Args
+	if len(args) <= 2 {
+		args = append(args, "#")
+	}
+	for _, arg := range args[2:] {
 		err = ch.QueueBind(q.Name, arg, "Announcer", false, nil)
 		if err != nil {
 			log.Println("error while binding queue to amqp exchange: ", err)
