@@ -21,21 +21,29 @@ func (h *Handler) PublishMessage(c *fiber.Ctx) error {
 		log.Error("error while parsing request body: ", err)
 		return fiber.ErrBadRequest
 	}
-	if !strings.Contains(body.PublishDelay, "ms") {
-		return c.Status(fiber.ErrBadRequest.Code).SendString("wrong publish delay format. should be: 100ms")
-	}
-	pubDelayDuration, err := time.ParseDuration(body.PublishDelay)
-	if pubDelayDuration.Milliseconds() < 5000 {
-		return c.Status(fiber.ErrBadRequest.Code).SendString("cant have delay less than 5 seconds")
-	}
-	if err != nil {
-		log.Error("error while parsing request publish delay: ", err)
-		return fiber.ErrBadRequest
-	}
-	err = h.RS.PublishMessage(body.Topic, body.Message, pubDelayDuration.Milliseconds())
-	if err != nil {
-		log.Error("error while publishing message: ", err)
-		return fiber.ErrInternalServerError
+	if body.IsDelayed {
+		if !strings.Contains(body.PublishDelay, "ms") {
+			return c.Status(fiber.ErrBadRequest.Code).SendString("wrong publish delay format. should be: 100ms")
+		}
+		pubDelayDuration, err := time.ParseDuration(body.PublishDelay)
+		if pubDelayDuration.Milliseconds() < 5000 {
+			return c.Status(fiber.ErrBadRequest.Code).SendString("cant have delay less than 5 seconds")
+		}
+		if err != nil {
+			log.Error("error while parsing request publish delay: ", err)
+			return fiber.ErrBadRequest
+		}
+		err = h.RS.PublishDelayedMessage(body.Topic, body.Message, pubDelayDuration.Milliseconds())
+		if err != nil {
+			log.Error("error while publishing message: ", err)
+			return fiber.ErrInternalServerError
+		}
+	} else {
+		err := h.RS.PublishMessage(body.Topic, body.Message)
+		if err != nil {
+			log.Error("error while publishing message: ", err)
+			return fiber.ErrInternalServerError
+		}
 	}
 	return nil
 }
