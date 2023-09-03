@@ -4,4 +4,4 @@ up:
 	docker compose up -d
 
 serve:
-	go run main.go start
+	go run main.go serve
