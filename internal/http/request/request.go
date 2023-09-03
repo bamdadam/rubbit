@@ -6,3 +6,7 @@ type PublishRequest struct {
 	PublishDelay string `json:"publish_delay"`
 	IsDelayed    bool   `json:"delayed"`
 }
+
+type GetMessageRequest struct {
+	Topic string `json:"topic"`
+}

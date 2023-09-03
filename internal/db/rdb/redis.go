@@ -2,6 +2,7 @@ package rdb
 
 import (
 	"context"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -12,7 +13,7 @@ type RedisDb struct {
 
 func New(ctx context.Context) (*RedisDb, error) {
 	const t = 10
-	timeout, cancel := context.WithTimeout(ctx, t)
+	timeout, cancel := context.WithTimeout(ctx, t*time.Second)
 	defer cancel()
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",

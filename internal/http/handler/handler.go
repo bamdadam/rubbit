@@ -1,17 +1,20 @@
 package handler
 
 import (
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/bamdadam/rubbit/internal/http/request"
 	"github.com/bamdadam/rubbit/internal/rabbit"
+	"github.com/bamdadam/rubbit/internal/store/rdb"
 	"github.com/gofiber/fiber/v2"
 	"github.com/labstack/gommon/log"
 )
 
 type Handler struct {
-	RS *rabbit.RabbitServer
+	RH  *rabbit.RabbitHandler
+	RDB *rdb.RedisStore
 }
 
 func (h *Handler) PublishMessage(c *fiber.Ctx) error {
@@ -33,13 +36,13 @@ func (h *Handler) PublishMessage(c *fiber.Ctx) error {
 			log.Error("error while parsing request publish delay: ", err)
 			return fiber.ErrBadRequest
 		}
-		err = h.RS.PublishDelayedMessage(body.Topic, body.Message, pubDelayDuration.Milliseconds())
+		err = h.RH.PublishDelayedMessage(body.Topic, body.Message, pubDelayDuration.Milliseconds())
 		if err != nil {
 			log.Error("error while publishing message: ", err)
 			return fiber.ErrInternalServerError
 		}
 	} else {
-		err := h.RS.PublishMessage(body.Topic, body.Message)
+		err := h.RH.PublishMessage(body.Topic, body.Message)
 		if err != nil {
 			log.Error("error while publishing message: ", err)
 			return fiber.ErrInternalServerError
@@ -49,7 +52,18 @@ func (h *Handler) PublishMessage(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetSubjectMessages(c *fiber.Ctx) error {
-	return nil
+	body := new(request.GetMessageRequest)
+	err := c.BodyParser(body)
+	if err != nil {
+		log.Error("error while parsing request body: ", err)
+		return fiber.ErrBadRequest
+	}
+	messages, err := h.RDB.GetMessage(c.Context(), body.Topic)
+	if err != nil {
+		log.Error("error while reading message from redis: ", err)
+		return fiber.ErrBadRequest
+	}
+	return c.Status(http.StatusOK).JSON(messages)
 }
 
 func (h *Handler) RegisterHandler(g fiber.Router) {
