@@ -18,7 +18,7 @@ go get github.com/bamdadam/rubbit
 ## Example
 
 ### Posting Event
-*request
+* request
 ```
 curl -X POST http://127.0.0.1:8080/publish -H 'Content-Type: application/json' -d '{"topic":"test-topic", "message": "first-message", "publish_delay":"5000ms", "delayed":true}'
 ```
