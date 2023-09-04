@@ -25,40 +25,6 @@ go get github.com/bamdadam/rubbit
 
 # Structure
 
-## Server
-```go
-func InitRabbitHandler() (*RabbitHandler, error) {
-	conn, err := amqp091.Dial("amqp://guest:guest@localhost:5672/")
-	if err != nil {
-		log.Println("error while making connection to amqp broker: ", err)
-		return nil, err
-	}
-	ch, err := conn.Channel()
-	if err != nil {
-		log.Println("error while making amqp channel: ", err)
-		return nil, err
-	}
-	err = exchange.NewDelayedTopicExchange(ch, "Announcer-Delayed")
-	if err != nil {
-		log.Println("error while making amqp exchange: ", err)
-		return nil, err
-	}
-
-	err = exchange.NewTopicExchange(ch, "Announcer")
-	if err != nil {
-		log.Println("error while making amqp exchange: ", err)
-		return nil, err
-	}
-	rb := new(RabbitHandler)
-	rb.ch = ch
-	rb.con = conn
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	rb.ctx = ctx
-	rb.cancel = cancel
-	return rb, nil
-}
-```
-
 ## publish
 ```go
 func (r *RabbitHandler) PublishMessage(topic string, message string) error {
@@ -82,6 +48,8 @@ func (r *RabbitHandler) PublishMessage(topic string, message string) error {
 ```
 
 ## publish delayed
+
+### The main difference between publish and publish delayed is that in delayed mode we add a x-delay header to our message, in which we specify the length of the delay.
 ```go
 func (r *RabbitHandler) PublishDelayedMessage(topic string, message string, pubDelay int64) error {
 	err := r.ch.PublishWithContext(
@@ -106,7 +74,7 @@ func (r *RabbitHandler) PublishDelayedMessage(topic string, message string, pubD
 }
 ```
 
-## client
+## Consume
 
 ```go
 func InitRabbitClient(rdb *rdb.RedisStore) error {
